@@ -57,7 +57,7 @@
                             detected = calc.base || 10;
                             output = this._recalculate(result, state.base, detected);
                         } catch (e) {
-                            console.error("Exception throw from solver", e);
+                            console.log("Invalid input", e);
                         }
 
                         return {
