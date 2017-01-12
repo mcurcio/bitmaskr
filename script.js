@@ -78,7 +78,15 @@ class Parser {
 
     _tokenize(str) {
         // split string on special characters (and, or)
-        return str.split(/([&|]+)/);
+        let arr = str.split(/([&|]+)/);
+
+        // filter last element off array is empty string. its a byproduct of using
+        // the split regex to parse
+        if (arr.length > 0 && arr[arr.length-1].trim().length === 0) {
+            arr.pop();
+        }
+
+        return arr;
     }
 };
 
@@ -105,8 +113,8 @@ class Solver {
         let base = 10;
         let count = 1;
 
-        // invalid expression if there are less than two elements, since [num, op, num] is needed
-        if (this._expression.length > 2) {
+        // invalid expression if there are an even number of elements
+        if (this._expression.length % 2 === 1) {
             let expressions = this._expression.slice();
 
             let start = expressions.shift();

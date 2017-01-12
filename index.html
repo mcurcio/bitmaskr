@@ -13,7 +13,6 @@
             <div class="container">
                 <div class="jumbotron">
                     <h1>Radix Converter</h1>
-                    <p class="lead">Two tools in one!</p>
                     <p class="lead">A radix converter, with support for bitwise operations.</p>
                 </div>
 
@@ -35,13 +34,11 @@
                 constructor(props) {
                     super(props);
 
-                    this.result = null;
-                    this.base = 0;
-
                     this.state = {
-                        input: '',
-                        output: '',
-                        base: 0,   // auto radix
+                        input: '',  // the input box
+                        output: '', // the output box
+                        result: null,   // the actual computed result, or null if invalid
+                        base: 0,   // the base radix selected by the user. 0 === auto radix
                         detected: 10 // computed auto radix
                     };
                 }
@@ -49,46 +46,46 @@
                 onInputChanged(e) {
                     let input = e.target.value;
 
-                    this.result = null;
-                    let output = '';
-                    try {
-                        let calc = new Solver(input);
-                        this.result = calc.solution;
-                        this.base = calc.base;
-                        this._recalculate();
-                    } catch (e) {
-                        console.error("Exception thrown from solver", e);
-                    }
+                    this.setState((state) => {
+                        let result = null;
+                        let output = '';
+                        let detected = 10;
 
-                    this.setState({
-                        input: input,
-                        detected: this.base || 10
+                        try {
+                            let calc = new Solver(input);
+                            result = calc.solution;
+                            detected = calc.base || 10;
+                            output = this._recalculate(result, state.base, detected);
+                        } catch (e) {
+                            console.error("Exception throw from solver", e);
+                        }
+
+                        return {
+                            input,
+                            output,
+                            result,
+                            detected: detected
+                        }
                     });
                 }
 
                 onOutputChanged(e) {
-                    this.setState({
-                        base: parseInt(e.target.value, 10)
+                    let base = parseInt(e.target.value, 10);
+
+                    this.setState((state) => {
+                        return {
+                            output: this._recalculate(state.result, base, state.detected),
+                            base
+                        };
                     });
-                    this._recalculate();
                 }
 
-                _recalculate() {
-                    this.setState((state) => {
-                        if (this.result !== null) {
-                            let base = state.base || this.base || 10;
-                            let output = this.result.toString(base);
-                            console.log(this.result, base, output);
+                _recalculate(result, base, detected) {
+                    if (result === null) {
+                        return '';
+                    }
 
-                            return {
-                                output
-                            };
-                        } else {
-                            return {
-                                output: ''
-                            };
-                        }
-                    });
+                    return result.toString(base || detected);
                 }
 
                 render() {
@@ -106,10 +103,6 @@
                         [10, `Decimal`],
                         [16, `Hex`]
                     ];
-
-                    OPTIONS.forEach(function (i) {
-                        console.log(i);
-                    });
 
                     return <div>
                         <Input value={this.state.input} onChange={(e) => this.onInputChanged(e)} />
