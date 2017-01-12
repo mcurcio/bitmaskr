@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Bitmask Calculator</title>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <div id="root">
+            <div class="container">
+                <div class="jumbotron">
+                    <h1>Radix Converter</h1>
+                    <p class="lead">Two tools in one!</p>
+                    <p class="lead">A radix converter, with support for bitwise operations.</p>
+                </div>
+
+                <div id="tool">Loading...</div>
+
+                <p style="margin-top: 10px;">Convert hex to binary, or decimal to hex, or binary to decimal, or mix and match with bitwise operators and choose your output format!</p>
+                <p><kbd>0x34fd</kbd> becomes <samp>11010011111101</samp> or <samp>13565</samp></p>
+                <p><kbd>0x34fd & 11001b</kbd> becomes <samp>0x19</samp> or <samp>11001b</samp> or <samp>0x19</samp></p>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/react@latest/dist/react.js"></script>
+        <script src="https://unpkg.com/react-dom@latest/dist/react-dom.js"></script>
+        <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+        <script src="script.js"></script>
+        <script type="text/babel">
+            class Calculator extends React.Component {
+                constructor(props) {
+                    super(props);
+
+                    this.result = null;
+                    this.base = 0;
+
+                    this.state = {
+                        input: '',
+                        output: '',
+                        base: 0,   // auto radix
+                        detected: 10 // computed auto radix
+                    };
+                }
+
+                onInputChanged(e) {
+                    let input = e.target.value;
+
+                    this.result = null;
+                    let output = '';
+                    try {
+                        let calc = new Solver(input);
+                        this.result = calc.solution;
+                        this.base = calc.base;
+                        this._recalculate();
+                    } catch (e) {
+                        console.error("Exception thrown from solver", e);
+                    }
+
+                    this.setState({
+                        input: input,
+                        detected: this.base || 10
+                    });
+                }
+
+                onOutputChanged(e) {
+                    this.setState({
+                        base: parseInt(e.target.value, 10)
+                    });
+                    this._recalculate();
+                }
+
+                _recalculate() {
+                    this.setState((state) => {
+                        if (this.result !== null) {
+                            let base = state.base || this.base || 10;
+                            let output = this.result.toString(base);
+                            console.log(this.result, base, output);
+
+                            return {
+                                output
+                            };
+                        } else {
+                            return {
+                                output: ''
+                            };
+                        }
+                    });
+                }
+
+                render() {
+                    let detected = "";
+                    switch (parseInt(this.state.detected, 10)) {
+                        case 2: detected = "(Binary)"; break;
+                        case 10: detected = "(Decimal)"; break;
+                        case 16: detected = "(Hex)"; break;
+                    }
+                    console.log("detected", detected, this.state.detected);
+
+                    const OPTIONS = [
+                        [0, `Auto ${detected}`],
+                        [2, `Binary`],
+                        [10, `Decimal`],
+                        [16, `Hex`]
+                    ];
+
+                    OPTIONS.forEach(function (i) {
+                        console.log(i);
+                    });
+
+                    return <div>
+                        <Input value={this.state.input} onChange={(e) => this.onInputChanged(e)} />
+
+                        {
+                            this.state.output.length ? (
+                                <div>
+                                    <div style={{margin: "30px 0", textAlign: "center", fontSize: "2em"}}>
+                                        <span className="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                                    </div>
+
+                                    <Output value={this.state.output} />
+
+                                    <div className="output-radix">
+                                        <form className="form-inline">
+                                            {
+                                                OPTIONS.map((a) => {
+                                                    return <label key={a[0]} className="radio-inline">
+                                                        <input type="radio" name="base" value={a[0]} checked={this.state.base === a[0]} onChange={(e) => this.onOutputChanged(e)} /> {a[1]}
+                                                    </label>;
+                                                })
+                                            }
+                                         </form>
+                                     </div>
+                                 </div>
+                            ) : ""
+                        }
+
+                    </div>;
+                }
+            };
+
+            class Input extends React.Component {
+                constructor(props) {
+                    super(props);
+                }
+
+                render() {
+                    return <input id="input" type="text" placeholder="0x45 & 10001011b" value={this.props.value} onChange={this.props.onChange} className="form-control input" />;
+                }
+            };
+
+            class Output extends React.Component {
+                constructor(props) {
+                    super(props);
+                }
+
+                render() {
+                    return <input id="output" type="text" value={this.props.value} readOnly className="form-control output" />;
+                }
+            };
+
+            ReactDOM.render(
+                <Calculator />,
+                document.getElementById('tool')
+            );
+        </script>
+    </body>
+</html>
